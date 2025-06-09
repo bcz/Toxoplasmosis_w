@@ -1,0 +1,51 @@
+---
+title: "Tables"
+author: "Beatriz Calvo"
+date: "2025-06-09"
+output: html_document
+---
+
+```{r Setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r Libraries, message=FALSE, echo=FALSE}
+# rm(list = ls())
+
+root.dir <- rprojroot::find_rstudio_root_file()
+
+# libraries
+library(tidyverse)
+library(flextable)
+
+```
+
+
+```{r Load data,  message=FALSE}
+d <- readRDS(file = paste0(root.dir, "/Data/clean_data.rds"))
+
+```
+
+```{r Numbers per line}
+
+# Identify the lines what were used in the different experimental rounds and the number of rats used per round and line
+rounds <- d %>% group_by(line_f, round_f) %>% summarise(n=n()) %>% reshape2::dcast(line_f ~ round_f)
+colnames(rounds) <- c("Line", "Round 1", "Round 2", "Round 3")
+# Only Control and WT were used in different rounds
+
+# Save table
+flextable(rounds) %>% save_as_docx( path = paste0(root.dir, "/Results/Tables/Table_S1.docx"))
+
+# Remove data
+rm(rounds)
+
+```
+
+
+```{r Numbers per line}
+
+# Determine the number of rats used, per each sex and line  
+d %>% group_by(line_f) %>% summarise(n=n())
+d %>% group_by(line_f, sex_f) %>% summarise(n=n()) %>% reshape2::dcast(line_f ~ sex_f) %>%
+  flextable() %>% save_as_docx( path = paste0(root.dir, "/Results/Tables/Table_S2.docx"))
+
+```

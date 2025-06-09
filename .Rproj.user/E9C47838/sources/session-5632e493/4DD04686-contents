@@ -1,0 +1,80 @@
+---
+title: "Tables"
+author: "Beatriz Calvo"
+date: "2025-06-09"
+output: html_document
+---
+
+```{r Setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Libraries, message=FALSE, echo=FALSE}
+# rm(list = ls())
+
+root.dir <- rprojroot::find_rstudio_root_file()
+
+# libraries
+
+library(tidyverse)
+#library(coda)
+library(brms)
+library(tidybayes)
+library(bayesplot)
+#library(broom)
+#library(broom.mixed)
+library(loo)
+library(ggdist)
+#library(posterior)
+#library(patchwork)
+#library(reshape2)
+#library(flextable)
+
+   
+library(modelr)
+
+## Colour palettes
+
+library(scales) 
+library(dplyr, warn.conflicts = FALSE)
+#library(lubridate, warn.conflicts = FALSE)
+
+
+library(RColorBrewer)
+#display.brewer.all()
+# customPalette0 <- brewer.pal(9,"OrRd")
+# customPalette0 <- customPalette0[c(1,3,5,7,9)]
+# customPalette2 <- brewer.pal(4,"Set2")
+# customPalette1 <- customPalette2[2:4]
+
+library(cmdstanr)
+set_cmdstan_path(path = "C:/Users/bcalvo/.cmdstan/cmdstan-2.36.0")
+
+```
+
+
+```{r Load data,  message=FALSE}
+d <- readRDS(file = paste0(root.dir, "/Data/clean_data.rds"))
+
+```
+
+```{r Numbers per line}
+# EXC outlier
+d[d$rat_id != "rat_27",] %>% group_by(line_f) %>% summarise(n=n())
+
+# INC outlier
+d %>% group_by(line_f) %>% summarise(n=n())
+
+```
+
+
+```{r Numbers per line}
+# EXC outlier
+d[d$rat_id != "rat_58",] %>% group_by(line_f) %>% summarise(n=n())
+
+# INC outlier
+d %>% group_by(line_f) %>% summarise(n=n())
+d %>% group_by(line_f, sex_f) %>% summarise(n=n()) %>% dcast(line_f ~ sex_f) %>%
+  flextable() %>% save_as_docx( path = paste0(results.dir, "/Table_S2.docx"))
+
+```

@@ -1,0 +1,2 @@
+"0",""
+"0","ggsave(paste0(results.dir, ""/Graphs/EDA/distance_cat.png""), width = 5, height = 4)"

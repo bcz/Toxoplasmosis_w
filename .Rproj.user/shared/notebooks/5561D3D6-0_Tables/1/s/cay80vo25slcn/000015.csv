@@ -1,0 +1,5 @@
+"0","d %>% group_by(line_f, sex_f) %>% summarise(n=n()) %>% reshape2::dcast(line_f ~ sex_f) %>%"
+"0","  flextable() %>% save_as_docx( path = paste0(root.dir, ""/Results/Tables/Table_S2.docx""))"
+"2","`summarise()` has grouped output by 'line_f'. You can override using the `.groups` argument."
+"2","Using n as value column: use value.var to override.
+"

@@ -1,0 +1,549 @@
+---
+title: "2_Velocity"
+author: "Beatriz Calvo"
+date: "2025-05-14"
+output: html_document
+---
+
+```{r Setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r Libraries, message=FALSE, echo=FALSE}
+# rm(list = ls())
+
+root.dir <- rprojroot::find_rstudio_root_file()
+
+# libraries
+library(tidyverse)
+library(brms)
+library(tidybayes)
+library(bayesplot)
+library(loo)
+library(ggdist)
+library(flextable)
+library(scales) 
+library(dplyr, warn.conflicts = FALSE)
+library(RColorBrewer)
+library(cmdstanr)
+set_cmdstan_path(path = "C:/Users/bcalvo/.cmdstan/cmdstan-2.36.0")
+
+```
+
+
+```{r Load data,  message=FALSE}
+
+## Load data
+
+d <- readRDS(file = paste0(root.dir, "/Data/clean_data.rds"))
+
+```
+
+
+```{r Exploratory plots}
+
+palette_sex <- c("#0D0887FF","#F89441FF" )
+
+ggplot(data = d, aes(x = line_f, y = velocity_cat, fill = sex_f, color=sex_f)) +
+  theme_bw()+
+  geom_boxplot(outliers=F, alpha=0.5) +
+  geom_point(position=position_jitterdodge())+
+  scale_fill_viridis_d("Sex", option = "plasma", end = 0.8, labels = c("Male", "Female")) +
+  scale_colour_manual("Sex", values=palette_sex, labels = c("Male", "Female"))  +  
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank()) +
+  theme(legend.position = "bottom", 
+        legend.background =element_blank(), 
+        legend.key.size = unit(0.5,"line"), 
+        legend.title=element_text(size=12),
+        legend.text=element_text(size=10)) +
+  labs(x = "\n Line", y ="Velocity in the cat zone (cm/s) \n")
+
+ggsave(paste0(root.dir, "/Results/Graphs/EDA/velocity_cat.png"), width = 5, height = 4)
+
+# Remove data
+rm(palette_sex)
+
+```
+
+```{r Round effect}
+
+## Check round effect by line (Control and WT) and sex
+
+## Data
+d_round_control <- d[d$line_f %in% c("Control"),]
+d_round_control$line_f <- factor(d_round_control$line_f)
+d_round_control_m <- d_round_control[d_round_control$sex == "Male",]
+d_round_control_f <- d_round_control[d_round_control$sex == "Female",]
+
+d_round_w <- d[d$line_f %in% c("WT"),]
+d_round_w$line_f <- factor(d_round_w$line_f)
+d_round_w_m <- d_round_w[d_round_w$sex == "Male",]
+d_round_w_f <- d_round_w[d_round_w$sex == "Female",]
+
+## Models
+
+## Control Males
+
+# Null model
+m_null <- brm(
+  bf(velocity_cat ~ 1),
+  data = d_round_control_m,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Round/velocity_round_control_m0")
+)
+#plot(m_null)
+summary(m_null)
+
+# Round model
+m_round <- brm(
+  bf(velocity_cat ~ -1 + round_f),  
+  data = d_round_control_m,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Round/velocity_round_control_m1")
+)
+#plot(m_round)
+summary(m_round)
+
+# Reload models
+m_null <- readRDS(paste0(root.dir, "/Results/Round/velocity_round_control_m0.rds"))
+m_round <- readRDS(paste0(root.dir, "/Results/Round/velocity_round_control_m1.rds"))
+
+# Compare models
+m_null <- add_criterion(m_null, "loo")#, moment_match = TRUE) 
+m_round <- add_criterion(m_round, "loo")#, moment_match = TRUE) 
+loo_compare(m_null, m_round) %>% print(simplify = F)
+
+
+## Control Females
+
+# Null model
+m_null <- brm(
+  bf(velocity_cat ~ 1),
+  data = d_round_control_f,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Round/velocity_round_control_f0")
+)
+#plot(m_null)
+summary(m_null)
+
+# Round model
+m_round <- brm(
+  bf(velocity_cat ~ -1 + round_f),  
+  data = d_round_control_f,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Round/velocity_round_control_f1")
+)
+#plot(m_round)
+summary(m_round)
+
+# Reload models
+m_null <- readRDS(paste0(root.dir, "/Results/Round/velocity_round_control_f0.rds"))
+m_round <- readRDS(paste0(root.dir, "/Results/Round/velocity_round_control_f1.rds"))
+
+# Compare models
+m_null <- add_criterion(m_null, "loo", moment_match = TRUE) 
+m_round <- add_criterion(m_round, "loo", moment_match = TRUE) 
+loo_compare(m_null, m_round) %>% print(simplify = F)
+
+
+## WT Males 
+
+# Null model
+m_null <- brm(
+  bf(velocity_cat ~ 1),
+  data = d_round_w_m,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Round/velocity_round_w_m0")
+)
+#plot(m_null)
+summary(m_null)
+
+# Round model
+m_round <- brm(
+  bf(velocity_cat ~ -1 + round_f),  
+  data = d_round_w_m,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Round/velocity_round_w_m1")
+)
+#plot(m_round)
+summary(m_round)
+
+# Reload models
+m_null <- readRDS(paste0(root.dir, "/Results/Round/velocity_round_w_m0.rds"))
+m_round <- readRDS(paste0(root.dir, "/Results/Round/velocity_round_w_m1.rds"))
+
+# Compare models
+m_null <- add_criterion(m_null, "loo")#, moment_match = TRUE) 
+m_round <- add_criterion(m_round, "loo")#, moment_match = TRUE) 
+loo_compare(m_null, m_round) %>% print(simplify = F)
+
+## WT Females
+
+# Null model
+m_null <- brm(
+  bf(velocity_cat ~ 1),
+  data = d_round_w_f,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Round/velocity_round_w_f0")
+)
+#plot(m_null)
+summary(m_null)
+
+# Round model
+m_round <- brm(
+  bf(velocity_cat ~ -1 + round_f),  
+  data = d_round_w_f,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Round/velocity_round_w_f1")
+)
+#plot(m_round)
+summary(m_round)
+
+# Reload models
+m_null <- readRDS(paste0(root.dir, "/Results/Round/velocity_round_w_f0.rds"))
+m_round <- readRDS(paste0(root.dir, "/Results/Round/velocity_round_w_f1.rds"))
+
+# Compare models
+m_null <- add_criterion(m_null, "loo")#, moment_match = TRUE) 
+m_round <- add_criterion(m_round, "loo")#, moment_match = TRUE) 
+loo_compare(m_null, m_round) %>% print(simplify = F)
+
+## Remove data
+
+rm(d_round_control, d_round_control_f, d_round_control_m, d_round_w, d_round_w_m, d_round_w_f)
+rm(m_null, m_round)
+
+```
+
+```{r EXC models}
+
+## Models and model and model comparison: exclude outlier
+
+## Outliers
+d$velocity_cat[d$rat_id == "rat_16"]
+
+## Models
+
+# Null model 
+m_null <- brm(
+  bf(velocity_cat ~ 1 ),
+  data = d[!(d$rat_id == "rat_16"),],
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Output/Model_exc/velocity_m0")
+)
+#plot(m_null)
+summary(m_null)
+
+# Line model (line_f)
+m_line <- brm(
+  bf(velocity_cat ~ 1 + line_f),
+  data = d[!(d$rat_id == "rat_16"),],
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Output/Model_exc/velocity_m1")
+)
+#plot(m_line)
+summary(m_line)
+
+# Sex model (sex_f)
+m_sex <- brm(
+  bf(velocity_cat ~ 1 + sex_f),  
+  data = d[!(d$rat_id == "rat_16"),],
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Output/Model_exc/velocity_m2")
+)
+#plot(m_sex)
+summary(m_sex)
+
+# Line-Sex interaction model (line_f * sex_f)
+m_int <- brm(
+  bf(velocity_cat ~ 1 + line_f * sex_f),  
+  data = d[!(d$rat_id == "rat_16"),],
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Output/Model_exc/velocity_m3")
+)
+#plot(m_int)
+summary(m_int)
+
+# Line + sex model (line_f + sex_f)
+m_line_sex <- brm(
+  bf(velocity_cat ~ 1 + line_f + sex_f),  
+  data = d[!(d$rat_id == "rat_16"),],
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Output/Model_exc/velocity_m4")
+)
+#plot(m_line_sex)
+summary(m_line_sex)
+
+## Load all models
+m_null <- readRDS(paste0(root.dir, "/Results/Output/Model_exc/velocity_m0.rds"))
+m_line <- readRDS(paste0(root.dir, "/Results/Output/Model_exc/velocity_m1.rds"))
+m_sex <- readRDS(paste0(root.dir, "/Results/Output/Model_exc/velocity_m2.rds"))
+m_int <- readRDS(paste0(root.dir, "/Results/Output/Model_exc/velocity_m3.rds"))
+m_line_sex <- readRDS(paste0(root.dir, "/Results/Output/Model_exc/velocity_m4.rds"))
+
+## Compare models and model selection
+m_null <- add_criterion(m_null, "loo", moment_match = TRUE) 
+m_line <- add_criterion(m_line, "loo", moment_match = TRUE) 
+m_sex <- add_criterion(m_sex, "loo", moment_match = TRUE) 
+m_int <- add_criterion(m_int, "loo", moment_match = TRUE) 
+m_line_sex <- add_criterion(m_line_sex, "loo", moment_match = TRUE) 
+loo_compare(m_null, m_line, m_sex, m_int, m_line_sex) %>% print(simplify = F)
+
+# Remove data
+rm(m_null, m_line, m_sex, m_int, m_line_sex)
+
+```
+
+```{r EXC output}
+
+## Generate model output for selected model: exclude outlier
+
+# Reload model
+m_velocity <- readRDS(paste0(root.dir, "/Results/Output/Model_exc/velocity_m1.rds"))
+
+# Predict values 
+newdata <- expand.grid(line_f = unique(d$line_f))
+
+beta_bayes_pred <- m_velocity %>% 
+  epred_draws(newdata = newdata)  
+
+# Factor
+beta_bayes_pred$line_f <- factor(beta_bayes_pred$line_f, levels = c("Control", "WT", "TgTH0", "TgTH-MID", "TgTH-HIGH"),
+                                 labels = c("Control", "WT", "TgTH0", "TgTH-MID", "TgTH-HIGH"))
+# Generate plot
+ggplot(beta_bayes_pred, aes(x = .epred, y = fct_rev(line_f), fill = line_f)) +
+  theme_bw() +
+  stat_halfeye(.width = c(0.95), point_interval = "mean_qi") +
+  scale_fill_viridis_d(option = "plasma", end = 0.8) +
+  guides(fill = "none") +
+  labs(x = "Velocity (cm/s) in the cat zone", y = NULL) 
+
+ggsave(paste0(root.dir, "/Results/Graphs/Model_exc/velocity_cat_m1_EXC.png"), width = 5, height = 3)
+
+# Generate table
+beta_bayes_pred_table <- m_velocity %>% 
+  epred_draws(newdata = newdata)  %>% mean_qi() %>% select(line_f, .epred, .lower, .upper) %>% 
+  rename_with(~c("Line", "Mean", "95% CI lower limit", "95% CI upper limit")) %>% mutate(across(2:4, round, 3))
+flextable(beta_bayes_pred_table) %>% save_as_docx( path = paste0(root.dir, "/Results/Tables/velocity_cat_m1_EXC.docx"))
+
+
+
+# Create contrasts
+t <- beta_bayes_pred %>%
+  dplyr::ungroup() %>%
+  dplyr::select(-.row) %>%
+  pivot_wider(names_from = "line_f", values_from = ".epred") %>%
+  mutate(`Control_TgTH0` = `Control` - `TgTH0`,
+         `Control_TgTH-MID` = `Control` - `TgTH-MID`,
+         `Control_TgTH-HIGH` = `Control` - `TgTH-HIGH`,
+         `TgTH0_TgTH-MID` = `TgTH0` - `TgTH-MID`,
+         `TgTH0_TgTH-HIGH` = `TgTH0` - `TgTH-HIGH`,
+         `TgTH-MID_TgTH-HIGH` = `TgTH-MID` - `TgTH-HIGH`,
+         `WT_Control` = `WT` - `Control`,
+         `WT_TgTH0` = `WT` - `TgTH0`,
+         `WT_TgTH-MID` = `WT` - `TgTH-MID`,
+         `WT_TgTH-HIGH` = `WT` - `TgTH-HIGH`,) %>%
+  pivot_longer(!c(.chain, .iteration, .draw), names_to = "key", values_to = "epred") %>%
+  filter(key %in% c("Control_TgTH0", "Control_TgTH-MID", "Control_TgTH-HIGH",
+                    "WT_Control",
+                    "TgTH0_TgTH-MID", "TgTH0_TgTH-HIGH", "TgTH-MID_TgTH-HIGH",
+                    "WT_TgTH0", "WT_TgTH-MID", "WT_TgTH-HIGH")) %>%
+  mutate(key = factor(key, levels = c("Control_TgTH0", "Control_TgTH-MID", "Control_TgTH-HIGH",
+                                      "TgTH0_TgTH-MID", "TgTH0_TgTH-HIGH", "TgTH-MID_TgTH-HIGH",
+                                      "WT_Control", "WT_TgTH0", "WT_TgTH-MID", "WT_TgTH-HIGH"),
+                      labels = c("Control - TgTH0", "Control - TgTH-MID", "Control - TgTH-HIGH",
+                                 "TgTH0 - TgTH-MID", "TgTH0 - TgTH-HIGH", "TgTH-MID - TgTH-HIGH",
+                                 "WT - Control", "WT - TgTH0", "WT - TgTH-MID", "WT - TgTH-HIGH")
+                      ))  %>%
+  group_by(key) %>%   mean_qi(epred) %>% 
+  select(key, epred, .lower, .upper) %>% 
+  rename_with(~c("Lines", "Mean", "95% CI lower limit", "95% CI upper limit")) %>% mutate(across(2:4, round, 3))
+
+flextable(t) %>% save_as_docx( path = paste0(root.dir, "/Results/Tables/velocity_cat_m1_EXC_INC_contrasts.docx"))
+
+# Remove data
+rm(beta_bayes_pred, beta_bayes_pred_table, m_velocity, newdata, t)
+
+```
+
+
+```{r INC models}
+
+## Models and model and model comparison: include outlier
+
+# Null model 
+m_null <- brm(
+  bf(velocity_cat ~ 1 ),
+  data = d,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Output/Model_inc/velocity_m0")
+)
+#plot(m_null)
+summary(m_null)
+
+# Line model (line_f)
+m_line <- brm(
+  bf(velocity_cat ~ 1 + line_f),
+  data = d,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Output/Model_inc/velocity_m1")
+)
+#plot(m_line)
+summary(m_line)
+
+# Sex model (sex_f)
+m_sex <- brm(
+  bf(velocity_cat ~ 1 + sex_f),  
+  data = d,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Output/Model_inc/velocity_m2")
+)
+#plot(m_sex)
+summary(m_sex)
+
+# Line-Sex interaction model (line_f * sex_f)
+m_int <- brm(
+  bf(velocity_cat ~ 1 + line_f * sex_f),  
+  data = d,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Output/Model_inc/velocity_m3")
+)
+#plot(m_int)
+summary(m_int)
+
+# Line + sex model (line_f + sex_f)
+m_line_sex <- brm(
+  bf(velocity_cat ~ 1 + line_f + sex_f),  
+  data = d,
+  family = student,
+  chains = 4, iter = 2000, warmup = 1000,
+  cores = 4, seed = 1234,
+  save_pars = save_pars(all = TRUE),
+  backend = "cmdstanr",
+  file = paste0(root.dir, "/Results/Output/Model_inc/velocity_m4")
+)
+#plot(m_line_sex)
+summary(m_line_sex)
+
+## Load all models
+m_null <- readRDS(paste0(root.dir, "/Results/Output/Model_inc/velocity_m0.rds"))
+m_line <- readRDS(paste0(root.dir, "/Results/Output/Model_inc/velocity_m1.rds"))
+m_sex <- readRDS(paste0(root.dir, "/Results/Output/Model_inc/velocity_m2.rds"))
+m_int <- readRDS(paste0(root.dir, "/Results/Output/Model_inc/velocity_m3.rds"))
+m_line_sex <- readRDS(paste0(root.dir, "/Results/Output/Model_inc/velocity_m4.rds"))
+
+## Compare models and model selection
+m_null <- add_criterion(m_null, "loo", moment_match = TRUE) 
+m_line <- add_criterion(m_line, "loo", moment_match = TRUE) 
+m_sex <- add_criterion(m_sex, "loo", moment_match = TRUE) 
+m_int <- add_criterion(m_int, "loo", moment_match = TRUE) 
+m_line_sex <- add_criterion(m_line_sex, "loo", moment_match = TRUE) 
+loo_compare(m_null, m_line, m_sex, m_int, m_line_sex) %>% print(simplify = F)
+
+# Remove data
+rm(m_null, m_line, m_sex, m_int, m_line_sex)
+
+```
+
+```{r INC output}
+
+## Generate model output for selected model: include outlier
+
+# Reload model
+m_velocity <- readRDS(paste0(root.dir, "/Results/Output/Model_inc/velocity_m1.rds"))
+
+# Predict values 
+newdata <- expand.grid(line_f = unique(d$line_f))
+
+beta_bayes_pred <- m_velocity %>% 
+  epred_draws(newdata = newdata)  
+
+# Factor
+beta_bayes_pred$line_f <- factor(beta_bayes_pred$line_f, levels = c("Control", "WT", "TgTH0", "TgTH-MID", "TgTH-HIGH"),
+                                 labels = c("Control", "WT", "TgTH0", "TgTH-MID", "TgTH-HIGH"))
+# Generate plot
+ggplot(beta_bayes_pred, aes(x = .epred, y = fct_rev(line_f), fill = line_f)) +
+  theme_bw() +
+  stat_halfeye(.width = c(0.95), point_interval = "mean_qi") +
+  scale_fill_viridis_d(option = "plasma", end = 0.8) +
+  guides(fill = "none") +
+  labs(x = "Velocity (cm/s) in the cat zone", y = NULL)  
+
+ggsave(paste0(root.dir, "/Results/Graphs/Model_inc/velocity_cat_m1_INC.png"), width = 5, height = 3)
+
+# Remove data
+rm(beta_bayes_pred, m_velocity, newdata)
+
+```

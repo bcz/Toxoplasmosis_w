@@ -1,0 +1,3 @@
+"0",""
+"0","# Determine the number of rats used, per each sex and line  "
+"0","d %>% group_by(line_f) %>% summarise(n=n())"

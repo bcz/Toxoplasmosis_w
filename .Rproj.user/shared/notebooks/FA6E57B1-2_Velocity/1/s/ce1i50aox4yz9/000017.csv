@@ -1,0 +1,4 @@
+"0",""
+"0","# Remove data"
+"0","rm(beta_bayes_pred, m_velocity, newdata)"
+"0",""
