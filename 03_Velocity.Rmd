@@ -1,5 +1,5 @@
 ---
-title: "2_Velocity"
+title: "Velocity"
 author: "Beatriz Calvo"
 date: "2025-05-14"
 output: html_document
@@ -253,7 +253,7 @@ rm(m_null, m_round)
 
 ```{r EXC models}
 
-## Models and model and model comparison: exclude outlier
+## Models and model comparison: exclude outlier
 
 ## Outliers
 d$velocity_cat[d$rat_id == "rat_16"]
@@ -425,7 +425,7 @@ rm(beta_bayes_pred, beta_bayes_pred_table, m_velocity, newdata, t)
 
 ```{r INC models}
 
-## Models and model and model comparison: include outlier
+## Models and model comparison: include outlier
 
 # Null model 
 m_null <- brm(

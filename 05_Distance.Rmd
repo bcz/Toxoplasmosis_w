@@ -1,5 +1,5 @@
 ---
-title: "4_Distance"
+title: "Distance"
 author: "Beatriz Calvo"
 date: "2025-05-14"
 output: html_document
@@ -247,7 +247,7 @@ rm(m_null, m_round)
 
 ```{r EXC-INC models}
 
-## Models and model and model comparison: there are no outliers
+## Models and model comparison: there are no outliers
 
 # Null model 
 m_null <- brm(

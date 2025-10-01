@@ -259,7 +259,7 @@ rm(m_null, m_round)
 
 ```{r EXC outliers models, eval = T}
 
-## Models and model and model comparison: exclude outlier
+## Models and model comparison: exclude outlier
 
 ## Outliers 
 d$proportion_time_cat[d$rat_id == "rat_58"]
@@ -441,7 +441,7 @@ rm(beta_bayes_pred, beta_bayes_pred_table, m_prop_time, newdata, t)
 
 ```{r INC outliers models, eval = FALSE}
 
-## Models and model and model comparison: include outlier
+## Models and model comparison: include outlier
 
 # Null model 
 m_null <- brm(

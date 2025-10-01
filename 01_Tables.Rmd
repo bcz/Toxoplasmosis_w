@@ -41,7 +41,7 @@ rm(rounds)
 ```
 
 
-```{r Numbers per line}
+```{r Numbers per sex and line}
 
 # Determine the number of rats used, per each sex and line  
 d %>% group_by(line_f) %>% summarise(n=n())
