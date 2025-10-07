@@ -1,8 +1,0 @@
-"0",""
-"0","# Generate table"
-"0","# beta_bayes_pred_table <- prop_time_m0 %>% "
-"0","#   epred_draws(newdata = newdata)  %>% mean_qi()"
-"0","# flextable(beta_bayes_pred_table)"
-"0",""
-"0","rm(beta_bayes_pred, m_prop_time, newdata)"
-"0",""

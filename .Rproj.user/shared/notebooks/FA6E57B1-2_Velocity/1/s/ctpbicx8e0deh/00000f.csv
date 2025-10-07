@@ -1,5 +1,0 @@
-"0",""
-"0","## Load data"
-"0",""
-"0","d <- readRDS(file = paste0(root.dir, ""/Data/clean_data.rds""))"
-"0",""
